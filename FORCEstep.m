@@ -14,7 +14,7 @@ Uinit = U;
      a = sqrt(gamm*p./rho);
     cmax = max(max(a + sqrt(u.^2 + v.^2)));
     dt = (CFL*dx)/cmax;
-    dt = dt;
+    %dt = dt;
     ULW = 0.5*(UL+UR) - 0.5*(dt/dx)*(flux_calc2d(UR,1)-flux_calc2d(UL,1));
     FLW = flux_calc2d(ULW,1);
     

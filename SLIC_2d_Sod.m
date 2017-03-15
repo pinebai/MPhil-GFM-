@@ -2,7 +2,7 @@ clear all
 close all
 Lx = 1;
 Ly = 1;
-dx = 0.005;
+dx = 0.005/sqrt(2);
 [xx,yy] = meshgrid([0:dx:Lx],[0:dx:Ly]);
 U = zeros([size(xx) 4]);
 gamm = 1.4;
@@ -13,61 +13,40 @@ M = size(xx,1);
 w = 0;
 Us = [0 0];
 b=1;
+Test_number = 2;
+
+
 %       |  rho  |
 %U =    | rho u |
 %       | rho v |
 %       |   E   |
 
 
-%Test 1
+%Sod test x direction
 
-% rho = ones(size(xx));
-% p = rho*1.5698;
-% v = rho*0.394;
-% u = rho*0;
-% rho = rho*1.3764;
-
-rho = 1 - (0.875/2)*(1+erf(1000*(yy-0.5)));
-p = 1 - (0.9/2)*(1+erf(1000*(yy-0.5)));
+rho = 1 - (0.875/2)*(1+erf(-1000*(1-yy-xx)));
+p = 1 - (0.9/2)*(1+erf(-1000*(1-yy-xx)));
 u = xx*0;
 v = xx*0;
-
-
-
-% 
-% rho(21:end,:) = 1;
-% u(21:end,:) = 0;
-% v(21:end,:) = 0;
-% p(21:end,:) = 1;
-% rho(:,:) = 1;
-% u(:,:) = 0;
-% v(:,:) = 0;
-% p(:,:) = 1;
-% rho(:,21:end) = 1;
-% u(:,21:end) = 0;
-% v(:,21:end) = 0;
-% p(:,21:end) = 1;
-
-% rho(1:end-20,:) = 1;
-% u(1:end-20,:) = 0;
-% v(1:end-20,:) = 0;
-% p(1:end-20,:) = 1;
 
 U(:,:,1) = rho;
 U(:,:,2) = u.*rho;
 U(:,:,3) = v.*rho;
 U(:,:,4) = 0.5*rho.*(u.^2+v.^2) + p/(gamm-1);
 t = 0;
-phi = -1 +0*sign(abs(real(sqrt(0.05^2 - ((xx-0.3 - Us(1)*t).^2 + (yy-0.5 -Us(2)*t).^2))))-0.001);
+%phi = sign(abs(real(sqrt(0.05^2 - ((xx-0.3 - Us(1)*t).^2 + (yy-0.5 -Us(2)*t).^2))))-0.001);
+
+phi = 0*xx-1;
+%phi(40:60,:) = 1;
 
 phi_s = phi;
 
 for i = 1:10
     phi_s(2:end-1,2:end-1) = phi_s(2:end-1,2:end-1) + 0.1*(phi_s(2:end-1,1:end-2) + phi_s(2:end-1,3:end) + phi_s(1:end-2,2:end-1) + phi_s(3:end,2:end-1) -4*phi(2:end-1,2:end-1));
 end
-
-
-
+% 
+% 
+% 
 phix = phi*0;
 phiy = phi*0;
 phix(2:end-1,2:end-1) = (phi_s(2:end-1,3:end)-phi_s(2:end-1,1:end-2))/(2*dx);
@@ -81,7 +60,7 @@ ny(isnan(ny)==1)=0;
 
 
 while t<0.25
-    [U,dt] = FORCEstep(U,dx,CFL);
+    [U,dt] = SLICstep(U,dx,CFL,w,M,N);
     %boundary conditions:
     U(:,end,:) = U(:,end-1,:);
     U(end,:,:) = U(end-1,:,:);
@@ -125,6 +104,7 @@ while t<0.25
         for i = 2:N-1
             for j = 2:M-1
                 if phi_s(j,i)>=0 %ie we are in the ghost fluid region
+                    disp('error')
                     if nx(j,i)>0 %see appendix A.4 in Fedkiw et al.
                         %calculating upwinded derivatives
                         drhodx = (rho(j,i) - rho(j,i-1))/dx;
@@ -277,7 +257,17 @@ schil(schil==0)=1;
 %view(60,60);
 schil_pad = ones(M,N);
 %imagesc(-log(schil));
-plot(p(:,50));
+%plot(p(50,:));
 schil_pad(2:end-1,2:end-1) = schil;
 pause(0.0001);
 end
+
+%centerline plotter:
+
+for i = 1:min([N,M])
+    pdiag(i) = p(i,i);
+    xdiag(i) = sqrt(2)*xx(1,i)-(sqrt(2)-1)/2;
+end
+        
+
+
